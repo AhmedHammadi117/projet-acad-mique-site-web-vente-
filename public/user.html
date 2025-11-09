@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Espace Utilisateur</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f2f2f2;
+      padding: 30px;
+    }
+    h1 {
+      color: #007bff;
+    }
+    .card {
+      background: white;
+      padding: 20px;
+      border-radius: 10px;
+      width: 400px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+      margin-bottom: 20px;
+    }
+    input {
+      width: 100%;
+      padding: 10px;
+      margin: 8px 0;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+    }
+    button {
+      background-color: #007bff;
+      color: white;
+      border: none;
+      padding: 10px;
+      border-radius: 6px;
+      cursor: pointer;
+      width: 100%;
+    }
+    button:hover {
+      background-color: #0056b3;
+    }
+    #message {
+      margin-top: 10px;
+      font-weight: bold;
+    }
+  </style>
+</head>
+
+<body>
+  <h1>👤 Espace Utilisateur</h1>
+  <div class="card">
+    <h3>Ajouter une vente</h3>
+    <input id="id_produit" type="number" placeholder="ID du produit" />
+    <input id="quantite" type="number" placeholder="Quantité vendue" />
+    <input id="adresse" type="text" placeholder="Adresse de la vente" />
+    <button onclick="ajouterVente()">Ajouter la vente</button>
+    <p id="message"></p>
+  </div>
+
+<!-- place ce div sous le formulaire -->
+<div id="historique" class="card">
+  <h3>Historique des ventes</h3>
+  <div id="listeVentes">Aucune vente pour l'instant.</div>
+</div>
+
+<script>
+  async function ajouterVente() {
+    const token = localStorage.getItem('token');
+    const id_produit = document.getElementById('id_produit').value;
+    const quantite = document.getElementById('quantite').value;
+    const adresse = document.getElementById('adresse').value;
+    const messageEl = document.getElementById('message');
+    const listeVentes = document.getElementById('listeVentes');
+
+    if (!id_produit || !quantite || !adresse) {
+      messageEl.textContent = " Merci de remplir tous les champs.";
+      messageEl.style.color = "red";
+      return;
+    }
+
+    try {
+      const res = await fetch('http://localhost:3000/vente/add', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ id_produit, quantite, adresse })
+      });
+
+      const data = await res.json();
+      console.log('Réponse /vente/add :', data);
+
+      if (!res.ok) {
+        messageEl.textContent = data.message || 'Erreur serveur';
+        messageEl.style.color = 'red';
+        return;
+      }
+
+      // Succès : afficher message et historique
+      messageEl.textContent = data.message || 'Vente ajoutée';
+      messageEl.style.color = 'green';
+
+      // afficher l'historique (si présent)
+      if (data.historique && Array.isArray(data.historique)) {
+        if (data.historique.length === 0) {
+          listeVentes.innerHTML = '<p>Aucune vente enregistrée.</p>';
+        } else {
+          // construire un petit tableau HTML
+          let html = '<table style="width:100%; border-collapse: collapse;">';
+          html += '<thead><tr><th style="border:1px solid #ddd;padding:6px">ID</th><th style="border:1px solid #ddd;padding:6px">Produit</th><th style="border:1px solid #ddd;padding:6px">Quantité</th><th style="border:1px solid #ddd;padding:6px">Adresse</th><th style="border:1px solid #ddd;padding:6px">Date</th></tr></thead><tbody>';
+          data.historique.forEach(v => {
+            html += `<tr>
+              <td style="border:1px solid #ddd;padding:6px">${v.id_vente}</td>
+              <td style="border:1px solid #ddd;padding:6px">${v.id_produit}</td>
+              <td style="border:1px solid #ddd;padding:6px">${v.quantite}</td>
+              <td style="border:1px solid #ddd;padding:6px">${v.adresse}</td>
+              <td style="border:1px solid #ddd;padding:6px">${v.date_vente}</td>
+            </tr>`;
+          });
+          html += '</tbody></table>';
+          listeVentes.innerHTML = html;
+        }
+      } else {
+        listeVentes.innerHTML = '<p>Historique non disponible.</p>';
+      }
+
+      // réinitialiser le formulaire
+      document.getElementById('id_produit').value = '';
+      document.getElementById('quantite').value = '';
+      document.getElementById('adresse').value = '';
+
+    } catch (err) {
+      console.error('Erreur fetch /vente/add :', err);
+      document.getElementById('message').textContent = 'Erreur réseau.';
+      document.getElementById('message').style.color = 'red';
+    }
+  }
+</script>
+
+</body>
+</html>

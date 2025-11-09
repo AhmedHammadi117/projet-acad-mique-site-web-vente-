@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <title>Admin Dashboard</title>
+  <style>
+    body { font-family: Arial; background: #f2f2f2; text-align: center; padding: 30px; }
+    button { padding: 10px 20px; background: #dc3545; color: white; border: none; border-radius: 8px; cursor: pointer; }
+  </style>
+</head>
+<body>
+  <h1>Bienvenue sur le tableau de bord Admin</h1>
+  <div id="info"></div>
+  <button onclick="logout()">Se déconnecter</button>
+
+  <script>
+    async function getAdminData() {
+      const token = localStorage.getItem('token');
+      const res = await fetch('http://localhost:3000/admin', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      const data = await res.json();
+      document.getElementById('info').textContent = JSON.stringify(data, null, 2);
+    }
+
+    function logout() {
+      localStorage.clear();
+      window.location.href = 'index.html';
+    }
+
+    getAdminData();
+  </script>
+</body>
+</html>
